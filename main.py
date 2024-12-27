@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import Dash
+from dash import Dash, html, dash_table
 
 df = pd.read_csv('https://raw.githubusercontent.com/saesaki/Dashboards/refs/heads/main/data.csv')
 app = Dash()
