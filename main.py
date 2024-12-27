@@ -32,6 +32,14 @@ app.layout = html.Div([
         value='CloudinessDay',
         inline=True,
         id='CloudinessChoice')),
+    dcc.Graph(id='windrose'),
+    html.Div(children='Выберите время суток для розы ветров:'),
+    html.Div(className='row', style={'textAlign': 'center'}, children=dcc.RadioItems(
+        options=[{'label': 'День', 'value': 'WindinessDay'},
+                 {'label': 'Вечер', 'value': 'WindinessEvening'}],
+        value='WindinessDay',
+        inline=True,
+        id='WindChoice'))
 ])
 
 @callback(
@@ -77,7 +85,58 @@ def updatePie(cityID, choiceCloud):
 
     return fig
 
+@callback(
+    Output(component_id='windrose', component_property='figure'),
+    Input(component_id='citySelection', component_property='value'),
+    Input(component_id='WindChoice', component_property='value')
+)
+def updateRose(cityID, windTime):
+    dff = df[df.CityID == cityID]
+    wind_data = dff[windTime].dropna()
 
+    def parse_wind(entry):
+        try:
+            if pd.isna(entry) or 'м/с' not in entry:
+                return None, None
+            parts = entry.split()
+            if len(parts) < 2:
+                return None, None
+            direction = parts[0]
+            speed = float(parts[1].replace('м/с', ''))
+            return direction, speed
+        except (IndexError, ValueError):
+            return None, None
+
+    wind_data_parsed = wind_data.apply(parse_wind)
+    parsed_data = wind_data_parsed.dropna()
+
+    if parsed_data.empty:
+        return go.Figure(go.Barpolar(r=[], theta=[], name='Нет данных о ветре'))
+
+    directions, speeds = zip(*parsed_data)
+    wind_df = pd.DataFrame({'Direction': directions, 'Speed': speeds})
+    wind_summary = wind_df.groupby('Direction').agg({'Speed': 'mean'}).reset_index()
+
+    fig = go.Figure(go.Barpolar(
+        r=wind_summary['Speed'],
+        theta=wind_summary['Direction'],
+        name='Средняя скорость ветра',
+        marker_color='blue',
+        opacity=0.7
+    ))
+
+    fig.update_layout(
+        title="Роза ветров",
+        polar=dict(
+            angularaxis=dict(
+                direction="clockwise",
+                categoryorder="array",
+                categoryarray=['С', 'СВ', 'В', 'ЮВ', 'Ю', 'ЮЗ', 'З', 'СЗ']
+            )
+        )
+    )
+
+    return fig
 
 
 if __name__ == '__main__':
