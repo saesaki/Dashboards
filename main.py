@@ -25,7 +25,13 @@ app.layout = html.Div([
                  ['TempDay', 'PressureDay', 'TempEvening', 'PressureEvening']],
         value='TempDay',
         inline=True,
-        id='TempOrPresChoice'))
+        id='TempOrPresChoice')),
+    dcc.Graph(id='pie'),
+    html.Div(className='row', style={'textAlign': 'center'}, children=dcc.RadioItems(
+        options=[{'label': translated_labels[i], 'value': i} for i in ['CloudinessDay', 'CloudinessEvening']],
+        value='CloudinessDay',
+        inline=True,
+        id='CloudinessChoice')),
 ])
 
 @callback(
@@ -56,6 +62,23 @@ def updateGraph(cityID, choiceRadio):
     )
 
     return fig
+
+@callback(
+    Output(component_id='pie', component_property='figure'),
+    Input(component_id='citySelection', component_property='value'),
+    Input(component_id='CloudinessChoice', component_property='value')
+)
+def updatePie(cityID, choiceCloud):
+    dff = df[df.CityID == cityID]
+    value_counts = dff[choiceCloud].value_counts()
+
+    fig = go.Figure(go.Pie(values=value_counts.values, labels=value_counts.index))
+    fig.update_layout(title=translated_labels[choiceCloud])
+
+    return fig
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
