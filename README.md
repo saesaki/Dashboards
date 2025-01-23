@@ -45,4 +45,12 @@ python main.py
 CSV-файл с названием data.csv находится в директории проекта
 
 
+## Запуск на сервере
+
+```bash
+sudo ufw allow 8050
+source venv/bin/activate
+python3 Dashboards/main.py
+```
+
 
